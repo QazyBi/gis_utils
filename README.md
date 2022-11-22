@@ -1,2 +1,1 @@
-- [ ] function receives a sentinel2 folderpath and list of channel indices and returns list of paths to channel files
-- [ ] function receives a sentinel2 folderpath and channel index and returns metadata of that channel
+
