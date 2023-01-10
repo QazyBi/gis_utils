@@ -66,18 +66,18 @@ def process_file(file_num, file, dst_path, tile_size):
 
 
 @validate_arguments
-def cut2tiles(src_folder: Path, dst_path: Path, tile_size: int, filename: str = None):
+def cut2tiles(src_path: Path, dst_path: Path, tile_size: int, filename: str = None):
     """
         Arguments:
-            src_folder - folder with rasters or folder with folder with rasters
-                src_folder/
+            src_path - folder with rasters or folder with folder with rasters
+                src_path/
                     raster.tif
                     raster2.tif
                     ...
 
                 or 
 
-                src_folder/
+                src_path/
                     folder/
                         raster.tif
                     folder2/
@@ -86,8 +86,14 @@ def cut2tiles(src_folder: Path, dst_path: Path, tile_size: int, filename: str = 
             dst_path - folder where to store results
             tile_size - size of the tile
             filename - files with this name will be processed
+
+        Usage:
+        >>> python gis_utils/cut_to_tiles.py\
+                --src_path /some/path\
+                --dst_path /other/path\
+                --tile_size 256
     """
-    folders = src_folder.iterdir()
+    folders = src_path.iterdir()
     folders = sorted(folders, key=lambda x: x.name)
 
     with Pool(32) as p:
