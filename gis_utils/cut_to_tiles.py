@@ -137,6 +137,3 @@ def cut2tiles(
 
 if __name__ == "__main__":
     Fire(cut2tiles)
-
-# sudo -E env "PATH=$PATH" python operations/cut_to_tiles.py --src_folder /home/qazybek/GIS_qazybek/projects/roads/data/raw-data/Raster --dst_path /home/qazybek/data/roads/070123-167folders-2048/masks --tile_size 2048 --filename label.tif
-# sudo -E env "PATH=$PATH" python operations/cut_to_tiles.py --src_folder /home/qazybek/GIS_qazybek/projects/roads/data/raw-data/Raster --dst_path /home/qazybek/data/roads/070123-167folders-2048/images --tile_size 2048
