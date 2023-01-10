@@ -1,6 +1,6 @@
 #
 from pathlib import Path
-from typing import List
+from typing import Optional
 from multiprocessing import Pool
 from functools import partial
 
@@ -13,13 +13,18 @@ from pytorch_toolbelt.inference.tiles import ImageSlicer
 from tqdm import tqdm
 
 
-def cut2tiles_file(file, dst_path, tile_size, enumerate_start=0, suffix=""):
+def cut2tiles_file(
+    file, dst_path, tile_size, tile_step=None, enumerate_start=0, suffix=""
+):
+    if tile_step is None:
+        tile_step = tile_size
+
     raster = rio.open(file)
     metadata = raster.meta
     channels_num = raster.count
 
     img = np.dstack([raster.read(i) for i in range(1, channels_num + 1)])
-    tiler = ImageSlicer(img.shape, tile_size=tile_size, tile_step=tile_size)
+    tiler = ImageSlicer(img.shape, tile_size=tile_size, tile_step=tile_step)
     if channels_num == 1:
         tiles = [tile.astype(np.int8) for tile in tiler.split(img)]
     else:
@@ -40,7 +45,7 @@ def cut2tiles_file(file, dst_path, tile_size, enumerate_start=0, suffix=""):
     return i
 
 
-def process_folder(file_num, folder, filename, dst_path, tile_size):
+def process_folder(file_num, folder, filename, dst_path, tile_size, tile_step=None):
     if filename is None:
         name = [i for i in folder.rglob("*.tif") if "label.tif" not in i.name][0]
     else:
@@ -50,23 +55,31 @@ def process_folder(file_num, folder, filename, dst_path, tile_size):
         file=name,
         dst_path=dst_path,
         tile_size=tile_size,
+        tile_step=tile_step,
         enumerate_start=0,
         suffix=f"{file_num}_",
     )
 
 
-def process_file(file_num, file, dst_path, tile_size):
+def process_file(file_num, file, dst_path, tile_size, tile_step=None):
     return cut2tiles_file(
         file=file,
         dst_path=dst_path,
         tile_size=tile_size,
+        tile_step=tile_step,
         enumerate_start=0,
         suffix=f"{file_num}_",
     )
 
 
 @validate_arguments
-def cut2tiles(src_path: Path, dst_path: Path, tile_size: int, filename: str = None):
+def cut2tiles(
+    src_path: Path,
+    dst_path: Path,
+    tile_size: int,
+    tile_step: Optional[int] = None,
+    filename: Optional[str] = None,
+):
     """
         Arguments:
             src_path - folder with rasters or folder with folder with rasters
@@ -100,14 +113,23 @@ def cut2tiles(src_path: Path, dst_path: Path, tile_size: int, filename: str = No
         if folders[0].is_file():
             # for files
             p.starmap(
-                partial(process_file, dst_path=dst_path, tile_size=tile_size),
+                partial(
+                    process_file,
+                    dst_path=dst_path,
+                    tile_size=tile_size,
+                    tile_step=tile_step,
+                ),
                 enumerate(folders),
             )
         else:
             # for folders
             p.starmap(
                 partial(
-                    process_folder, filename=filename, dst_path=dst_path, tile_size=tile_size
+                    process_folder,
+                    filename=filename,
+                    dst_path=dst_path,
+                    tile_size=tile_size,
+                    tile_step=tile_step,
                 ),
                 enumerate(folders),
             )
@@ -115,3 +137,6 @@ def cut2tiles(src_path: Path, dst_path: Path, tile_size: int, filename: str = No
 
 if __name__ == "__main__":
     Fire(cut2tiles)
+
+# sudo -E env "PATH=$PATH" python operations/cut_to_tiles.py --src_folder /home/qazybek/GIS_qazybek/projects/roads/data/raw-data/Raster --dst_path /home/qazybek/data/roads/070123-167folders-2048/masks --tile_size 2048 --filename label.tif
+# sudo -E env "PATH=$PATH" python operations/cut_to_tiles.py --src_folder /home/qazybek/GIS_qazybek/projects/roads/data/raw-data/Raster --dst_path /home/qazybek/data/roads/070123-167folders-2048/images --tile_size 2048
