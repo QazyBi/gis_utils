@@ -1,6 +1,6 @@
 #
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple, Union
 from multiprocessing import Pool
 from functools import partial
 
@@ -24,6 +24,21 @@ def cut2tiles_file(
     channels_num = raster.count
 
     img = np.dstack([raster.read(i) for i in range(1, channels_num + 1)])
+    return cut2tiles_array(
+        dst_path,
+        tile_size,
+        tile_step,
+        enumerate_start,
+        suffix,
+        metadata,
+        channels_num,
+        img,
+    )
+
+
+def cut2tiles_array(
+    dst_path, tile_size, tile_step, enumerate_start, suffix, metadata, channels_num, img
+):
     tiler = ImageSlicer(img.shape, tile_size=tile_size, tile_step=tile_step)
     if channels_num == 1:
         tiles = [tile.astype(np.int8) for tile in tiler.split(img)]
@@ -46,6 +61,36 @@ def cut2tiles_file(
 
 
 def process_folder(file_num, folder, filename, dst_path, tile_size, tile_step=None):
+    if "," in filename or type(filename) == tuple:
+        if "," in filename:
+            names = [folder / ch for ch in filename.split(",")]
+        else:
+            names = filename
+        try:
+            img = np.dstack([rio.open(name).read(1) for name in names])
+            metadata = rio.open(names[0]).meta
+        except:
+            try:
+                img = np.dstack(
+                    [rio.open(folder / f"{name}.tif").read(1) for name in names]
+                )
+                metadata = rio.open(folder / f"{names[0]}.tif").meta
+            except:
+                img = np.dstack(
+                    [rio.open(folder / f"{name}.jp2").read(1) for name in names]
+                )
+                metadata = rio.open(folder / f"{names[0]}.jp2").meta
+
+        cut2tiles_array(
+            dst_path,
+            tile_size,
+            tile_step,
+            enumerate_start=0,
+            suffix=f"{file_num}_",
+            metadata=metadata,
+            channels_num=len(names),
+            img=img,
+        )
     if filename is None:
         name = [i for i in folder.rglob("*.tif") if "label.tif" not in i.name][0]
     else:
@@ -78,7 +123,7 @@ def cut2tiles(
     dst_path: Path,
     tile_size: int,
     tile_step: Optional[int] = None,
-    filename: Optional[str] = None,
+    filename: Union[Optional[Tuple], Optional[str]] = None,
 ):
     """
         Arguments:
