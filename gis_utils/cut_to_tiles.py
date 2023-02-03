@@ -61,7 +61,7 @@ def cut2tiles_array(
 
 
 def process_folder(file_num, folder, filename, dst_path, tile_size, tile_step=None):
-    if "," in filename or type(filename) == tuple:
+    if filename is not None and ("," in filename or type(filename) == tuple):
         if "," in filename:
             names = [folder / ch for ch in filename.split(",")]
         else:
@@ -91,6 +91,7 @@ def process_folder(file_num, folder, filename, dst_path, tile_size, tile_step=No
             channels_num=len(names),
             img=img,
         )
+
     if filename is None:
         name = [i for i in folder.rglob("*.tif") if "label.tif" not in i.name][0]
     else:
@@ -182,3 +183,4 @@ def cut2tiles(
 
 if __name__ == "__main__":
     Fire(cut2tiles)
+    # more informative progress bars (like in pytorch lightning)
